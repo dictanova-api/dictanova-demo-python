@@ -98,7 +98,7 @@ if __name__ == "__main__":
 	wc_freq = {opinion["label"]:opinion["occurrences"] for opinion in r.json()['items']}
 	wc = WordCloud(
 		prefer_horizontal=1, 
-		font_path='/Users/Fabien/Library/Fonts/Geomanist-Regular.otf',
+		font_path='Geomanist-Regular.otf',
 		background_color="white", 
 		colormap=onlyred)
 	wordcloud = wc.fit_words(wc_freq)
