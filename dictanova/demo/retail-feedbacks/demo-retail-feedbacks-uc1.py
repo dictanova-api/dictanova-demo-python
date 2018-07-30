@@ -6,9 +6,11 @@ the most impact on the satisfaction score
 """
 
 import pandas as pd
-import requests, json
+import requests, json, sys
 import numpy as np
-import sys
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
+from matplotlib import colors
 
 class DictanovaAPIAuth(requests.auth.AuthBase):
 	"""Attaches Dictanova Bearer Authentication to the given Request object."""
@@ -121,7 +123,11 @@ if __name__ == "__main__":
 		print(r)
 		# Add data
 		opinion_distr = {int(v["dimensions"][0]): v["value"] for v in r.json()["periods"][0]["values"]}
-		opinion_distr.update({"opinion": opinion["id"], "base": r.json()["periods"][0]["total"]["value"]})
+		opinion_distr.update({
+				"opinion": opinion["id"], 
+				"lbl": opinion["label"],
+				"base": r.json()["periods"][0]["total"]["value"]
+			})
 		df_impact = df_impact.append(pd.DataFrame.from_records([opinion_distr]), ignore_index=True)
 	
 	# Now compute the impact of each opinion with various method
@@ -154,28 +160,95 @@ if __name__ == "__main__":
 	
 	##################################################################### DISPLAY RESULTS
 	
+	# Remove __REF__ for generating tops
+	dfops = df_impact[df_impact["opinion"] != "__REF__"]
+
+	wcp = WordCloud(
+		prefer_horizontal=1, background_color="white", 
+		colormap=colors.ListedColormap(['seagreen']))
+	wcn = WordCloud(
+		prefer_horizontal=1, background_color="white", 
+		colormap=colors.ListedColormap(['orangered']))
+	wcm = WordCloud(
+		prefer_horizontal=1, background_color="white", 
+		colormap=colors.ListedColormap(['gold']))
+
 	print("[Regular] Top 10 opinions with best satisfaction:")
-	df_impact.sort_values("var_csat_regular", ascending=False, inplace=True)
-	print(df_impact.iloc[0:10][["opinion","var_csat_regular","csat_regular","base"]])
+	dfops.sort_values("var_csat_regular", ascending=False, inplace=True)
+	# Display as table
+	print(dfops.iloc[0:10][["opinion","var_csat_regular","csat_regular","base"]])
+	# Display as wordcloud
+	wcp.fit_words({r.lbl:r.var_csat_regular for r in dfops.iloc[:50].itertuples()})
+	plt.title("[Regular] Top opinions with best satisfaction")
+	plt.imshow(wcp)
+	plt.axis("off")
+	#plt.show()
+	plt.savefig("uc1-top100-best-satisfaction.png", bbox_inches='tight')
+	# plt.close() # https://github.com/matplotlib/matplotlib/issues/9856/
 	
 	print("[Regular] Top 10 opinions with worst satisfaction:")
-	df_impact.sort_values("var_csat_regular", ascending=True, inplace=True)
-	print(df_impact.iloc[0:10][["opinion","var_csat_regular","csat_regular","base"]])
+	dfops.sort_values("var_csat_regular", ascending=True, inplace=True)
+	# Display as table
+	print(dfops.iloc[0:10][["opinion","var_csat_regular","csat_regular","base"]])
+	# Display as wordcloud
+	wcn.fit_words({r.lbl:r.var_csat_regular*-1 for r in dfops.iloc[:50].itertuples()})
+	plt.title("[Regular] Top opinions with worst satisfaction")
+	plt.imshow(wcn)
+	plt.axis("off")
+	#plt.show()
+	plt.savefig("uc1-top100-worst-satisfaction.png", bbox_inches='tight')
+	# plt.close() # https://github.com/matplotlib/matplotlib/issues/9856/
 	
 	print("[Impact without] Top 10 opinions that weight positively on satisfaction:")
-	df_impact.sort_values("var_csat_without", ascending=True, inplace=True)
-	print(df_impact.iloc[0:10][["opinion","var_csat_without","csat_without","base"]])
+	dfops.sort_values("var_csat_without", ascending=True, inplace=True)
+	# Display as table
+	print(dfops.iloc[0:10][["opinion","var_csat_without","csat_without","base"]])
+	# Display as wordcloud
+	wcp.fit_words({r.lbl:r.var_csat_without*-1 for r in dfops.iloc[:50].itertuples()})
+	plt.title("[Impact without] Top opinions that weight positively on satisfaction")
+	plt.imshow(wcp)
+	plt.axis("off")
+	#plt.show()
+	plt.savefig("uc1-top100-weights-positively.png", bbox_inches='tight')
+	# plt.close() # https://github.com/matplotlib/matplotlib/issues/9856/
 	
 	print("[Impact without] Top 10 opinions that weight negatively on satisfaction:")
-	df_impact.sort_values("var_csat_without", ascending=False, inplace=True)
-	print(df_impact.iloc[0:10][["opinion","var_csat_without","csat_without","base"]])
+	dfops.sort_values("var_csat_without", ascending=False, inplace=True)
+	# Display as table
+	print(dfops.iloc[0:10][["opinion","var_csat_without","csat_without","base"]])
+	# Display as wordcloud
+	wcn.fit_words({r.lbl:r.var_csat_without for r in dfops.iloc[:50].itertuples()})
+	plt.title("[Impact without] Top opinions that weight negatively on satisfaction")
+	plt.imshow(wcn)
+	plt.axis("off")
+	#plt.show()
+	plt.savefig("uc1-top100-weights-negatively.png", bbox_inches='tight')
+	#plt.close() # https://github.com/matplotlib/matplotlib/issues/9856/
 
 	print("[Satisfied Impact] Top 10 opinions that should be preserved to maintain satisfaction:")
-	df_impact.sort_values("var_csat_rm_sat", ascending=True, inplace=True)
-	print(df_impact.iloc[0:10][["opinion","var_csat_rm_sat","csat_rm_sat","base"]])
+	dfops.sort_values("var_csat_rm_sat", ascending=True, inplace=True)
+	# Display as table
+	print(dfops.iloc[0:10][["opinion","var_csat_rm_sat","csat_rm_sat","base"]])
+	# Display as wordcloud
+	wcp.fit_words({r.lbl:r.var_csat_rm_sat*-1 for r in dfops.iloc[:50].itertuples()})
+	plt.title("[Satisfied Impact] Top opinions that should be preserved to maintain satisfaction")
+	plt.imshow(wcp)
+	plt.axis("off")
+	#plt.show()
+	plt.savefig("uc1-top100-to-maintain.png", bbox_inches='tight')
+	# plt.close() # https://github.com/matplotlib/matplotlib/issues/9856/
 	
 	print("[Unsatisfied Impact] Top 10 opinions that can be leveraged to improve satisfaction:")
-	df_impact.sort_values("var_csat_rm_unsat", ascending=True, inplace=True)
-	print(df_impact.iloc[0:10][["opinion","var_csat_rm_unsat","var_csat_rm_unsat","base"]])
+	dfops.sort_values("var_csat_rm_unsat", ascending=True, inplace=True)
+	# Display as table
+	print(dfops.iloc[0:10][["opinion","var_csat_rm_unsat","var_csat_rm_unsat","base"]])
+	# Display as wordcloud
+	wcn.fit_words({r.lbl:r.var_csat_rm_sat for r in dfops.iloc[:50].itertuples()})
+	plt.title("[Unsatisfied Impact] Top opinions that can be leveraged to improve satisfaction")
+	plt.imshow(wcn)
+	plt.axis("off")
+	#plt.show()
+	plt.savefig("uc1-top100-to-leverage.png", bbox_inches='tight')
+	#plt.close() # https://github.com/matplotlib/matplotlib/issues/9856/
 	
 	
