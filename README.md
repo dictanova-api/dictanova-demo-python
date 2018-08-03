@@ -8,6 +8,13 @@ This repository describes various use cases of the API.
 
 ## Setup for dictanova/demo
 
+You need some dependencies to run those scripts:
+* pandas >= 0.23
+* requests
+* auth0-python == 3.3.0
+* DateTime == 4.2
+* wordcloud == 1.4.1
+
 To run the demo scripts, you need to create a file named `credentials` under the directory
 `dictanova/demo` that will contain one line with your credential id and secret separated
 by a semi colon:
